@@ -1,0 +1,148 @@
+. Map-reduce is a data processing for large volumes of data into useful aggregated results.
+
+
+
+
+
+
+Aggregation
+
+customercertificate.aggregate([
+
+                   {
+                "$match":{
+                    isActive:true
+                }
+
+            },
+                {
+
+                    "$lookup": {
+                        from: "customer",
+                        localField: "customerId",
+                        foreignField: "_id",
+                        as: "data"
+
+                    }
+                },
+                {
+                    "$unwind": "$data"
+                },
+
+                {
+                    "$project": {
+                        "year": { "$year": "$dueDate" },
+                        "month": { "$month": "$dueDate" },
+                        "week": { "$week": "$dueDate" },
+                        "day": { "$dayOfMonth": "$dueDate" },
+                        "customerName": "$data.customerName",
+                        "customerId": 1,
+                        "customerPO": 1,
+                        "serial": 1,
+                        "imageName": 1
+                    }
+                },
+                {
+                    "$match": {
+                        "month": month,
+                        "year": year
+                    }
+                }
+            ])
+
+
+
+db.getCollection('users').aggregate([
+    {
+        $lookup: {
+            from: "userinfo",
+            localField: "userId",
+            foreignField: "userId",
+            as: "userInfoData"
+        }
+    },
+    {
+        $lookup: {
+            from: "userrole",
+            localField: "userId",
+            foreignField: "userId",
+            as: "userRoleData"
+        }
+    },
+    { $unwind: { path: "$userInfoData", preserveNullAndEmptyArrays: true }},
+    { $unwind: { path: "$userRoleData", preserveNullAndEmptyArrays: true }}
+])            
+
+
+
+
+{
+customer_id : "A123",
+amount : 500,
+status : "A"
+},
+{
+customer_id : "A123",
+amount : 300,
+status : "A"
+},
+{
+customer_id : "B123",
+amount : 400,
+status : "A"
+}
+{
+customer_id : "A123",
+amount : 250,
+status : "D"
+}
+
+
+
+
+db.order.mapReduce(
+    function(){ emit(this.customer_id, this.amount); },
+    function(key, values) {return Array.sum(values);},
+               {
+                 query : {status :"A"},
+                  out : "order_total"
+
+               }
+
+)
+
+
+--------------------------------
+
+
+{
+   _id: ObjectId(7df78ad8902c)
+   title: 'MongoDB Overview', 
+   description: 'MongoDB is no sql database',
+   by_user: 'tutorials point',
+   url: 'http://www.tutorialspoint.com',
+   tags: ['mongodb', 'database', 'NoSQL'],
+   likes: 100
+},
+{
+   _id: ObjectId(7df78ad8902d)
+   title: 'NoSQL Overview', 
+   description: 'No sql database is very fast',
+   by_user: 'tutorials point',
+   url: 'http://www.tutorialspoint.com',
+   tags: ['mongodb', 'database', 'NoSQL'],
+   likes: 10
+},
+{
+   _id: ObjectId(7df78ad8902e)
+   title: 'Neo4j Overview', 
+   description: 'Neo4j is no sql database',
+   by_user: 'Neo4j',
+   url: 'http://www.neo4j.com',
+   tags: ['neo4j', 'database', 'NoSQL'],
+   likes: 750
+},
+
+
+
+db.mycol.aggregate([{$group : {_id : "$by_user", num_tutorial : {$sum : 1}}}])
