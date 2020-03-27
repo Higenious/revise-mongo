@@ -145,4 +145,139 @@ db.order.mapReduce(
 
 
 
+
+
+
+
+
+-----------------------------------------------------------\
+
+Input records
+
+
+{
+    "_id" : ObjectId("5e75b8fef6f51357e4dad9f2"),
+    "location" : {
+        "street" : {
+            "number" : 9360,
+            "name" : "Travessa dos Açorianos"
+        },
+        "coordinates" : {
+            "latitude" : -69.3199,
+            "longitude" : 154.0748
+        },
+        "timezone" : {
+            "offset" : "-8:00",
+            "description" : "Pacific Time (US & Canada)"
+        },
+        "city" : "Divinópolis",
+        "state" : "Espírito Santo",
+        "country" : "Brazil",
+        "postcode" : "23089"
+    },
+    "gender" : "female",
+    "email" : "nicol.mendes@example.com",
+    "login" : {
+        "uuid" : "b932ef44-2afb-4b72-a1c5-47b2263bbab2",
+        "username" : "goldenfish516",
+        "password" : "sharks",
+        "salt" : "O7UQElyh",
+        "md5" : "9f217bf6d5d8576703dbd38e864f709f",
+        "sha1" : "22a4dbba7eea9b47537ed9931b907ceae10f4de7",
+        "sha256" : "2bcf93087fcd2ecc623702ad5727e5a24f33ee343c1871028a7950e770c53ee4"
+    },
+    "dob" : {
+        "date" : ISODate("1983-09-10T18:56:41.614Z"),
+        "age" : 37
+    },
+    "registered" : {
+        "date" : ISODate("2005-04-10T08:57:39.425Z"),
+        "age" : 15
+    },
+    "phone" : "(42) 7767-1119",
+    "cell" : "(93) 9032-7161",
+    "picture" : {
+        "large" : "https://randomuser.me/api/portraits/women/16.jpg",
+        "medium" : "https://randomuser.me/api/portraits/med/women/16.jpg",
+        "thumbnail" : "https://randomuser.me/api/portraits/thumb/women/16.jpg"
+    },
+    "nat" : "BR",
+    "updatedAt" : ISODate("2020-03-21T06:49:34.398Z"),
+    "createdAt" : ISODate("2020-03-21T06:49:34.398Z"),
+    "__v" : 0
+}
+
+
+--------------------------------------------------------------
+
+       {
+          $group: {
+            _id: "$nat",
+            "0-30": {
+              $sum: {
+                $cond: [
+                  { $and: [{ $gte: ["$dob.age", 0] }, { $lt: ["$dob.age", 30] }] },
+                  1,
+                  0
+                ]
+              }
+            },
+            "30-50": {
+              $sum: {
+                $cond: [
+                  { $and: [{ $gte: ["$dob.age", 30] }, { $lt: ["$dob.age", 50] }] },
+                  1,
+                  0
+                ]
+              }
+            },
+            "50plus": { $sum: { $cond: [{ $gte: ["$dob.age", 50] }, 1, 0] } }
+          }
+        },
+        /** Group on nationality & push male & female objects into respective arrays */
+        {
+          $group: {
+            _id: "$_id.nationality",
+            male: {
+              $push: {
+                $cond: [
+                  { $eq: ["$_id.gender", "male"] },
+                  {
+                    "0-30": "$$ROOT.0-30",
+                    "30-50": "$$ROOT.30-50",
+                    "50plus": "$$ROOT.50plus"
+                  },
+                  "$$REMOVE"
+                ]
+              }
+            },
+            female: {
+              $push: {
+                $cond: [
+                  { $eq: ["$_id.gender", "female"] },
+                  {
+                    "0-30": "$$ROOT.0-30",
+                    "30-50": "$$ROOT.30-50",
+                    "50plus": "$$ROOT.50plus"
+                  },
+                  "$$REMOVE"
+                ]
+              }
+            }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            nationality: "$_id",
+            female: { $arrayElemAt: ["$female", 0] }, // Get object from array
+            male: { $arrayElemAt: ["$male", 0] }
+          }
+        }
+
+
+
+
+
+
 db.mycol.aggregate([{$group : {_id : "$by_user", num_tutorial : {$sum : 1}}}])
